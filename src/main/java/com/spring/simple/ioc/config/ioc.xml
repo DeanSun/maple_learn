@@ -1,0 +1,13 @@
+<beans xmlns="http://www.springframework.org/schema/beans">
+    <bean id="wheel" class="com.spring.simple.ioc.entity.Wheel">
+        <property name="brand" value="Michelin" />
+        <property name="spec" value="Made in China."/>
+    </bean>
+    <bean class="com.spring.simple.ioc.entity.Bike" id="bike">
+        <property name="name" value="Merida" />
+        <property name="length" value="200cm" />
+        <property name="height" value="150cm" />
+        <property name="width" value="10cm" />
+        <property name="wheel" ref="wheel" />
+    </bean>
+</beans>
