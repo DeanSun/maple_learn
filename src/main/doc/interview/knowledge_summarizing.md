@@ -24,6 +24,14 @@
       https://www.jianshu.com/p/9a8d94c0c90c
 4. springboot controller是单例的嘛，为什么要关注单例？
 
+5. 讲述一下 SpringBoot 自动装配原理？
+    + 什么是 SpringBoot 自动装配？
+        + 大概可以把 @SpringBootApplication看作是 @Configuration、@EnableAutoConfiguration、@ComponentScan 注解的集合。
+            1. @EnableAutoConfiguration：启用 SpringBoot 的自动配置机制
+               + EnableAutoConfiguration 只是一个简单地注解，自动装配核心功能的实现实际是通过 AutoConfigurationImportSelector类。
+            2. @Configuration：允许在上下文中注册额外的 bean 或导入其他配置类
+            3. @ComponentScan： 扫描被@Component (@Service,@Controller)注解的 bean，注解默认会扫描启动类所在的包下所有的类 ，可以自定义不扫描某些 bean。如下图所示，容器中将排除TypeExcludeFilter和AutoConfigurationExcludeFilter。
+    + Spring Boot 通过@EnableAutoConfiguration开启自动装配，通过 SpringFactoriesLoader 最终加载META-INF/spring.factories中的自动配置类实现自动装配，自动配置类其实就是通过@Conditional按需加载的配置类，想要其生效必须引入spring-boot-starter-xxx包实现起步依赖
 # redis
 
 1. redis 基本数据类型  
@@ -214,5 +222,12 @@
 1. 开发商常用的设计模式都有那些？
     + 模板方法模式：经典使用就是AQS共享和非共享获取和释放锁的实现
     + 工厂方法模式：spring实例工厂的实现
-    + 代理模式：最简单的应用就是代理类将所有其他模块业务方法的调用进行封装  
+    + 代理模式：最简单的应用就是代理类将所有其他模块业务方法的调用进行封装
+
+# 问题排查
+
+1.线上问题都有哪些手段？
+
++ 日志跟踪
++ arthas ali提供的java线上应用诊断利器 参考：https://arthas.aliyun.com/zh-cn/
    
