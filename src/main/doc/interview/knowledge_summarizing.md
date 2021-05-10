@@ -28,10 +28,71 @@
     + 什么是 SpringBoot 自动装配？
         + 大概可以把 @SpringBootApplication看作是 @Configuration、@EnableAutoConfiguration、@ComponentScan 注解的集合。
             1. @EnableAutoConfiguration：启用 SpringBoot 的自动配置机制
-               + EnableAutoConfiguration 只是一个简单地注解，自动装配核心功能的实现实际是通过 AutoConfigurationImportSelector类。
+                + EnableAutoConfiguration 只是一个简单地注解，自动装配核心功能的实现实际是通过 AutoConfigurationImportSelector类。
             2. @Configuration：允许在上下文中注册额外的 bean 或导入其他配置类
             3. @ComponentScan： 扫描被@Component (@Service,@Controller)注解的 bean，注解默认会扫描启动类所在的包下所有的类 ，可以自定义不扫描某些 bean。如下图所示，容器中将排除TypeExcludeFilter和AutoConfigurationExcludeFilter。
     + Spring Boot 通过@EnableAutoConfiguration开启自动装配，通过 SpringFactoriesLoader 最终加载META-INF/spring.factories中的自动配置类实现自动装配，自动配置类其实就是通过@Conditional按需加载的配置类，想要其生效必须引入spring-boot-starter-xxx包实现起步依赖
+
+6. spring 事务
+    + 事务：事务是逻辑上的一组操作，要么都执行，要么都不执行。  
+      注意事项：事务能否生效数据库引擎是否支持事务是关键。比如常用的 MySQL 数据库默认使用支持事务的innodb引擎。但是，如果把数据库引擎变为 myisam，那么程序也就不再支持事务了！
+    + 事务的特性（ACID）了解么?
+        + 原子性（Atomicity）：一个事务（transaction）中的所有操作，或者全部完成，或者全部不完成，不会结束在中间某个环节。事务在执行过程中发生错误，会被回滚（Rollback）到事务开始前的状态，就像这个事务从来没有执行过一样。即，事务不可分割、不可约简。
+        + 一致性（Consistency）：在事务开始之前和事务结束以后，数据库的完整性没有被破坏。这表示写入的资料必须完全符合所有的预设约束、触发器、级联回滚等。
+        + 隔离性（Isolation）： 数据库允许多个并发事务同时对其数据进行读写和修改的能力，隔离性可以防止多个事务并发执行时由于交叉执行而导致数据的不一致。事务隔离分为不同级别，包括未提交读（Read uncommitted）、提交读（read committed）、可重复读（repeatable read）和串行化（Serializable）。
+        + 持久性（Durability）:事务处理结束后，对数据的修改就是永久的，即便系统故障也不会丢失。
+    + Spring 支持两种方式的事务管理： 1)编程式事务管理 2）声明式事务管理 实际是通过 AOP 实现（基于@Transactional 的全注解方式使用最多）。
+    + Spring 事务管理接口介绍 :
+        + PlatformTransactionManager:（平台）事务管理器，Spring 事务策略的核心。
+        + TransactionDefinition： 事务定义信息(事务隔离级别、传播行为、超时、只读、回滚规则)。
+        + TransactionStatus： 事务运行状态。
+    + PlatformTransactionManager:事务管理接口 Spring 并不直接管理事务，而是提供了多种事务管理器 。
+    + TransactionDefinition:事务属性 事务属性可以理解成事务的一些基本配置，描述了事务策略如何应用到方法上。
+    + TransactionDefinition 接口中定义了 5 个方法以及一些表示事务属性的常量比如隔离级别、传播行为等等。
+    ```
+        package org.springframework.transaction;
+        
+        import org.springframework.lang.Nullable;
+    
+        public interface TransactionDefinition {
+        int PROPAGATION_REQUIRED = 0;
+        int PROPAGATION_SUPPORTS = 1;
+        int PROPAGATION_MANDATORY = 2;
+        int PROPAGATION_REQUIRES_NEW = 3;
+        int PROPAGATION_NOT_SUPPORTED = 4;
+        int PROPAGATION_NEVER = 5;
+        int PROPAGATION_NESTED = 6;
+        int ISOLATION_DEFAULT = -1;
+        int ISOLATION_READ_UNCOMMITTED = 1;
+        int ISOLATION_READ_COMMITTED = 2;
+        int ISOLATION_REPEATABLE_READ = 4;
+        int ISOLATION_SERIALIZABLE = 8;
+        int TIMEOUT_DEFAULT = -1;
+        // 返回事务的传播行为，默认值为 REQUIRED。
+        int getPropagationBehavior();
+        //返回事务的隔离级别，默认值是 DEFAULT
+        int getIsolationLevel();
+        // 返回事务的超时时间，默认值为-1。如果超过该时间限制但事务还没有完成，则自动回滚事务。
+        int getTimeout();
+        // 返回是否为只读事务，默认值为 false
+        boolean isReadOnly();
+        
+            @Nullable
+            String getName();
+        }
+    ```
+    + TransactionStatus:事务状态 TransactionStatus接口用来记录事务的状态 该接口定义了一组方法,用来获取或判断事务的相应状态信息。  
+      TransactionStatus 接口接口内容如下：
+      ```
+        public interface TransactionStatus{
+           boolean isNewTransaction(); // 是否是新的事务
+           boolean hasSavepoint(); // 是否有恢复点
+           void setRollbackOnly();  // 设置为只回滚
+           boolean isRollbackOnly(); // 是否为只回滚
+           boolean isCompleted; // 是否已完成
+        } 
+       ```
+
 # redis
 
 1. redis 基本数据类型  
@@ -86,13 +147,27 @@
 
 # 分布式
 
-1. 简单描述cap
-    + Consistency: Every read receives the most recent write or an error  
-      一致性：每次读取都会收到最新的写入或错误
-    + Availability: Every request receives a (non-error) response, without the guarantee that it contains the most recent write  
-      可用性：每个请求都会收到一个（非错误）响应，但不能保证它包含最新的写入
-    + Partition tolerance: The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes  
-      分区容错：尽管节点之间的网络丢弃（或延迟）了任意数量的消息，但系统仍继续运行
+1. CAP
+    1. 简单描述cap
+        + Consistency: Every read receives the most recent write or an error  
+          一致性：所有节点访问同一份最新的数据副本
+        + Availability: Every request receives a (non-error) response, without the guarantee that it contains the most recent write  
+          可用性：非故障的节点在合理的时间内返回合理的响应（不是错误或者超时的响应）。
+        + Partition tolerance: The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes  
+          分区容错性：分布式系统出现网络分区的时候，仍然能够对外提供服务。
+    2. 什么是网络分区？
+        + 分布式系统中，多个节点之前的网络本来是连通的，但是因为某些故障（比如部分节点网络出了问题）某些节点之间不连通了，整个网络就分成了几块区域，这就叫网络分区。
+    3. 不是所谓的三选二？
+        + 当发生网络分区的时候，如果我们要继续服务，那么强一致性和可用性只能 2 选 1。也就是说当网络分区之后 P 是前提，决定了 P 之后才有 C 和 A 的选择。也就是说分区容错性（Partition tolerance）我们是必须要实现的。简而言之就是：CAP 理论中分区容错性 P 是一定要满足的，在此基础上，只能满足可用性 A 或者一致性 C。 因此，分布式系统理论上不可能选择 CA 架构，只能选择 CP 或者 AP 架构。
+    4. 分布式事务BASE理论？
+        + BASE理论是对CAP的延伸和补充，是对CAP中的AP方案的一个补充，即使在选择AP方案的情况下，如何更好的最终达到C。BASE是基本可用，柔性状态，最终一致性三个短语的缩写，核心的思想是即使无法做到强一致性，但应用可以采用适合的方式达到最终一致性。
+    5. 参考：  
+       https://juejin.cn/post/6844903936718012430
+2. 分布式锁，是选择AP还是选择CP ？   
+   这里实现分布式锁的方式选取了三种：
+    + 基于数据库实现分布式锁
+    + 基于redis实现分布式锁
+    + 基于zookeeper实现分布式锁
 
 # 系统设计
 
