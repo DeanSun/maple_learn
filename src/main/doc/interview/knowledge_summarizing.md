@@ -2,9 +2,7 @@
 
 1. springboot 启动流程  
    Springboot的启动，主要创建了配置环境(environment)、事件监听(listeners)、应用上下文(applicationContext)，并基于以上条件，在容器中开始实例化我们需要的Bean
-2. spring事务实现机制  
-   spring事务有两种方式：显示手动提交方式和隐式自动提交。手动提交自然不用说了，就是人为控制事务。隐式自动提交采用的是aop切面动态代理实现的。我个人理解就是把手动提交那几个代码以切面方式进行实现了。
-3. 对spring cloud alibaba了解吗？都了解哪些组件
+2. 对spring cloud alibaba了解吗？都了解哪些组件
     + spring cloud alibaba: 它是由一些阿里巴巴的开源组件和云产品组成的。
     + 主要功能：
         + 服务限流降级：默认支持 Servlet、Feign、RestTemplate、Dubbo 和 RocketMQ 限流降级功能的接入，可以在运行时通过控制台实时修改限流降级规则，还支持查看限流降级 Metrics 监控。
@@ -22,9 +20,9 @@
         + Alibaba Cloud SchedulerX: 阿里中间件团队开发的一款分布式任务调度产品，提供秒级、精准、高可靠、高可用的定时（基于 Cron 表达式）任务调度服务。
     + 参考：  
       https://www.jianshu.com/p/9a8d94c0c90c
-4. springboot controller是单例的嘛，为什么要关注单例？
+3. springboot controller是单例的嘛，为什么要关注单例？
 
-5. 讲述一下 SpringBoot 自动装配原理？
+4. 讲述一下 SpringBoot 自动装配原理？
     + 什么是 SpringBoot 自动装配？
         + 大概可以把 @SpringBootApplication看作是 @Configuration、@EnableAutoConfiguration、@ComponentScan 注解的集合。
             1. @EnableAutoConfiguration：启用 SpringBoot 的自动配置机制
@@ -33,7 +31,7 @@
             3. @ComponentScan： 扫描被@Component (@Service,@Controller)注解的 bean，注解默认会扫描启动类所在的包下所有的类 ，可以自定义不扫描某些 bean。如下图所示，容器中将排除TypeExcludeFilter和AutoConfigurationExcludeFilter。
     + Spring Boot 通过@EnableAutoConfiguration开启自动装配，通过 SpringFactoriesLoader 最终加载META-INF/spring.factories中的自动配置类实现自动装配，自动配置类其实就是通过@Conditional按需加载的配置类，想要其生效必须引入spring-boot-starter-xxx包实现起步依赖
 
-6. spring 事务
+5. spring 事务
     + 事务：事务是逻辑上的一组操作，要么都执行，要么都不执行。  
       注意事项：事务能否生效数据库引擎是否支持事务是关键。比如常用的 MySQL 数据库默认使用支持事务的innodb引擎。但是，如果把数据库引擎变为 myisam，那么程序也就不再支持事务了！
     + 事务的特性（ACID）了解么?
@@ -100,6 +98,55 @@
 2. redis是单线程还是多线程  
    redis4.0已经有了多线程的概念，但是默认是关闭的。并且redis多线程跟membercache是不同的，redis作者也强调，redis的单线程的处理能力很强，没有必要使用多线程。之所以加入了多线程是为了用来处理删除等速度较慢的指令。 redis之所以速度很快是因为底层使用的是IO多路复用，也就是reactor模型。这种模型跟java nio，linux epoll/poll的IO思路是一样的。select+轮循。同一个线程可以响应多个IO事件，异步非阻塞。多路指的是多个网络请求，复用指的就是同一个线程。 而且redis是内存式的，并且数据结构简单，也是它速度快的原因。
 
+# kafka
+
+1. Kafka可不可以动态添加topic副本？
+
+# 数据库
+
++ Mysql
+    + Mysql 常用内置函数都有哪些？
+        + 数学函数   
+          ABS(x)：返回x的绝对值  
+          BIN(x)：返回x的二进制（OCT返回八进制，HEX返回十六进制）  
+          CEILING(x)：返回大于x的最小整数值  
+          EXP(x)：返回值e（自然对数的底）的x次方  
+          FLOOR(x)：返回小于x的最大整数值  
+          GREATEST(x1,x2,...,xn)：返回集合中最大的值  
+          LEAST(x1,x2,...,xn): 返回集合中最小的值  
+          LN(x): 返回x的自然对数  
+          LOG(x,y): 返回x的以y为底的对数  
+          MOD(x,y): 返回x/y的模（余数）  
+          PI(): 返回pi的值（圆周率）  
+          RAND(): 返回０到１内的随机值,可以通过提供一个参数(种子)使RAND()随机数生成器生成一个指定的值。  
+          ROUND(x,y): 返回参数x的四舍五入的有y位小数的值  
+          SIGN(x): 返回代表数字x的符号的值  
+          SQRT(x): 返回一个数的平方根  
+          TRUNCATE(x,y): 返回数字x截短为y位小数的结果
+        + 聚合函数  
+          ASCII(char)：返回字符的ASCII码值  
+          BIT_LENGTH(str)：返回字符串的比特长度  
+          CONCAT(s1,s2...,sn)：将s1,s2...,sn连接成字符串  
+          CONCAT_WS(sep,s1,s2...,sn)：将s1,s2...,sn连接成字符串，并用sep字符间隔  
+          INSERT(str,x,y,instr)：将字符串str从第x位置开始，y个字符长的子串替换为字符串instr，返回结果  
+          FIND_IN_SET(str,list)：分析逗号分隔的list列表，如果发现str，返回str在list中的位置  
+          LCASE(str)或LOWER(str)：返回将字符串str中所有字符改变为小写后的结果  
+          LEFT(str,x)：返回字符串str中最左边的x个字符  
+          LENGTH(s)：返回字符串str中的字符数  
+          LTRIM(str)：从字符串str中切掉开头的空格  
+          POSITION(substr,str): 返回子串substr在字符串str中第一次出现的位置  
+          QUOTE(str): 用反斜杠转义str中的单引号  
+          REPEAT(str,srchstr,rplcstr): 返回字符串str重复x次的结果  
+          REVERSE(str): 返回颠倒字符串str的结果  
+          RIGHT(str,x): 返回字符串str中最右边的x个字符  
+          RTRIM(str): 返回字符串str尾部的空格  
+          STRCMP(s1,s2): 比较字符串s1和s2  
+          TRIM(str): 去除字符串首部和尾部的所有空格  
+          UCASE(str)或UPPER(str): 返回将字符串str中所有字符转变为大写后的结果
+
++ SQL Server
++ MongoDB
+
 # 并发
 
 1. 多个sync嵌套是程序怎么进行区分
@@ -135,7 +182,7 @@
    <tr>
    <td>锁类型</td>
    <td>可重入，不响应中断，非公平锁</td>
-   <td>可冲入，可判断，公平/非公平（二者皆可）</td>
+   <td>可重入，可判断，公平/非公平（二者皆可）</td>
    </tr>
    <tr>
    <td>性能</td>
@@ -144,6 +191,80 @@
    </tr>
    </tbody>
    </table>
+
+3. 并发编程三要素？
+    + 原子性：原子性指的就是一个或者多个操作，要么全部执行并且在执行过程中不被其他操作打断，要么就全部都不执行
+    + 可见性：可见性是多个线程同时操作一个共享变量时，其中一个线程对共享变量进行修改后，其他线程能够立即看到修改后的结果
+    + 有序性：程序的执行顺序按照代码的先后顺序执行
+
+4. 创建线程的方式有哪些?
+    + 集成Thread类创建线程类
+    + 通过Runnable接口创建线程类
+    + 通过Callable和Future创建线程
+    + 通过线程池创建
+5. Java线程具有五种基本状态
+    + 新建状态(New): 当线程对象创建后，立即进入新建状态
+    + 就绪状态(Runnable): 当调用线程对象的start（）方法，线程即进入就绪状态。处于就绪状态的线程，只是说明该线程已经准备好，随时可以响应CPU的任务调度，而不是说调用了start()方法后，该线程立即执行。
+    + 运行状态(Running): 当CPU开始调度就绪状态的线程时，线程才可以进入运行状态。也就是说要是想让线程进入到运行状态，必须先让线程进入就绪状态。
+    + 阻塞状态(Blocking)： 处于运行状态中的线程由于某种原因，暂时放弃对CPU的使用权，停止执行，进入到阻塞状态，直到其进入到就绪状态，才能够再次被CPU调用进入运行状态。
+        + 根据阻塞状态的原因不同，阻塞状态又可以分为三种：
+            1. 等待阻塞 运行状态中的线程执行wait()方法，使本线程进入到等待阻塞状态
+            2. 同步阻塞 线程在获取synchronized同步锁失败(因为被其他线程所占用),它会进入同步阻塞状态
+            3. 其他阻塞 通过调用线程的sleep()或join()或发出了I/O请求时，线程会进入到阻塞状态。当sleep()状态超时，join()等待线程终止或者超时，或者I/O处理完毕时，线程重新转入就绪状态。
+    + 死亡状态(Dead): 线程执行完了或者因异常退出了run()方法，该线程结束生命周期。
+
+6. 什么是线程池?
+    + 线程池就是提前创建若干线程，如果有任务需要处理，线程池里的线程就会处理任务，处理完之后线程并不会被销毁，而是等待下一个任务。由于创建和销毁都是非常消耗系统资源的，所以当你想要频繁创建和销毁线程的时候就可以使用线程池来提升性能。
+
+7. 四种线程池的创建：
+    + newCachedThreadPool：创建一个可缓存线程池
+    + newFixedThreadPool: 创建一个定长线程池，可控制线程最大并发数
+    + newScheduledThreadPool: 创建一个定长线程池，支持定时及周期性任务执行
+    + newSingleThreadExecutor: 创建一个单线程化的线程池，只有一个线程来执行任务。
+
+8. 常用的并发工具类有哪些?
+    + CountDownLatch、CyclicBarrier、Semephore、Exchanger
+
+9. CyclicBarrier和CountDownLatch的区别？
+    + CountDownLatch 是一个同步工具类，用来协调多个线程之间的同步。这个工具通常用来控制线程等待，它可以让某一个线程等待直到倒计时结束，再开始执行。
+    + CyclicBarrier让一组线程到达一个屏障（也可以叫同步点）时被阻塞，直到最后一个线程到达屏障时，屏障才会开门，所有被屏障拦截的线程才会继续干活。CyclicBarrier 默认的构造方法是 CyclicBarrier(int parties)，其参数表示屏障拦截的线程数量，每个线程调用 await()方法告诉 CyclicBarrier 我已经到达了屏障，然后当前线程被阻塞。
+    + CountDownLatch 计数只能使用一次，但是CyclicBarrier如字面意思一样，是一个可以循环使用的屏障，调用reset()方法后可以再次使用。
+    + CyclicBarrier方法还有很多其他的功能接口方法。比如获取阻塞线程数量，获取阻塞的线程的是否被中断。
+
+10. Synchronized的作用?
+    + Synchronized关键字是用来控制线程同步的，可以保证在多线程环境中，只有一个线程可以执行代码。该关键字可以修饰代码块也可以修饰方法。
+
+11. volatile关键字的作用?
+    + 使用该关键字以后可以让多线程环境中，线程间可以共享变量信息，实现可见性；使用改关键字可以禁止指令重排序优化。
+
+12. 什么是CAS？
+    + CAS就是 Compare And Swap 的缩写，意思就是比较交换。 CAS是一种乐观锁。CAS包括三个操作数，内存位置、预期原值和新值。
+
+13. CAS的问题：
+    + CAS容易造成ABA问题： 一个线程将数值改成了b，然后又改回a，此时CAS是认为没有变化，其实是已经变化了，这个问题最好的解决办法就是版本号。每操作一次版本号+1.
+    + 循环时间长开销大：自旋CAS如果长时间不成功，会给CPU带来非常大的执行开销
+    + 只能保证一个共享变量的原子操作：当一个共享变量执行操作时，可以使用自旋CAS的方式保证其原子性。但是多个共享变量操作时，这时候就需要加锁了。
+
+14. 什么是Future?
+    + 在实例化线程的时候，不论我们继承Thread还是实现Runnable接口，我们都得不到执行后的结果。但是通过实现Callback接口，并用Future可以来接收多线程的执行结果。Future表示一个可能还没有完成的异步任务的结果，针对这个结果可以添加Callback以便在任务成功或失败做出相应的操作。
+
+15. 什么是AQS？
+    + 它是Java底层一个同步工具类，用一个int类型的变量表示同步状态了，并提供了一系列CAS操作来管理这个同步状态。
+    + AQS是一个用来构建锁和同步器的框架，使用AQS可以简单高效地构造出应用广泛的大量的同步器。例如：ReentrantLock，Semphore、ReentrantReadWriteLock、SynchronousQueue、FutureTask。
+
+16. AQS的两种同步方式?
+    + 独占式
+        + ReentrantLock
+    + 共享式
+        + Semaphore、CountDownLatch
+    
+    混合的例如：ReentrantReadWriteLock
+
+17. ReadWriteLock是什么?
+    + ReadWriteLock是一个读写锁接口，ReentrantReadWriteLock是ReadWriteLock接口的一个具体实现，实现了读写的分离，读锁是共享的，写锁是独占的，读和读之间不会互斥，读和写、写和读、写和写之间才会互斥，提升了读写的性能。
+    
+18. FutureTask是什么？
+    + 
 
 # 分布式
 
@@ -176,7 +297,8 @@
     + 设计原则：数据少，请求少，路径段、依赖少、不使用单点。
     + 技术要点：
         + 动静分离 URL唯一化、分离浏览者相关的因素（包括是否已登录、登录权限等）、分离时间因素、异步化地域因素、去掉cookie。
-            + 使用缓存可以处理静态数据。动态数据处理通常由两种解决方案：ESI(Edge Side Include)方案和CSI(Client Side Include)方案。
+            + 使用缓存可以处理静态数据。
+            + 动态数据处理通常由两种解决方案：ESI(Edge Side Include)方案和CSI(Client Side Include)方案。
                 1. ESI方案：在web代理服务器上做动态内容请求，并将请求插入到静态页面内，当用户拿到页面的时候是一个完整的页面了。这中对服务器性能有影响，但是用户体验比较好。
                 2. CSI方案：单独发起js请求，向服务器端进行资源请求。这种服务器性能更优，但是用户端请求可能会演示，体验稍差。
             + 动静分离架构方案：
