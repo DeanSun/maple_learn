@@ -91,20 +91,9 @@
         } 
        ```
 
-# redis
-
-1. redis 基本数据类型  
-   Redis支持五种数据类型：string（字符串），hash（哈希），list（列表），set（集合）及zset(sorted set：有序集合)。
-2. redis是单线程还是多线程  
-   redis4.0已经有了多线程的概念，但是默认是关闭的。并且redis多线程跟membercache是不同的，redis作者也强调，redis的单线程的处理能力很强，没有必要使用多线程。之所以加入了多线程是为了用来处理删除等速度较慢的指令。 redis之所以速度很快是因为底层使用的是IO多路复用，也就是reactor模型。这种模型跟java nio，linux epoll/poll的IO思路是一样的。select+轮循。同一个线程可以响应多个IO事件，异步非阻塞。多路指的是多个网络请求，复用指的就是同一个线程。 而且redis是内存式的，并且数据结构简单，也是它速度快的原因。
-
-# kafka
-
-1. Kafka可不可以动态添加topic副本？
-
 # 数据库
 
-+ Mysql
+1. Mysql
     + Mysql 常用内置函数都有哪些？
         + 数学函数   
           ABS(x)：返回x的绝对值  
@@ -144,8 +133,35 @@
           TRIM(str): 去除字符串首部和尾部的所有空格  
           UCASE(str)或UPPER(str): 返回将字符串str中所有字符转变为大写后的结果
 
-+ SQL Server
-+ MongoDB
+    + Mysql集群模式都有哪些，以及相应的使用场景
+
+    + Mysql常见的优化手段
+
+    + Mysql底层Btree的实现原理
+        +
+
+    + Mysql中查询条件类型与字段类型不一致，会有什么性能方面的影响嘛？
+
+    + 锁机制与InnoDB锁算法
+        + MyISAM和InnoDB存储引擎使用的锁：
+            + MyISAM使用表级锁(table-level locking)
+            + InnoDB支持行级锁(row-level locking)和表级锁，默认使用行级锁
+        + 表级锁和行级锁对比
+            + 表级锁: Mysql中锁定粒度量大的一种锁，对当前操作的整张表加锁，资源占用少，加锁快，不会出现死锁。锁定粒度大，很容易出现冲突的问题，并发度低，MyISAM和InnoDB都支持表级锁。
+            + 行级锁：Mysql中锁定粒度最小的一种锁，只对当前操作的行进行加锁。行级锁能够大大减少数据库操作的冲突。并发度高，加锁开销大，加锁慢，容易出现死锁的情况。
+        + InnoDB行级锁有以下几种：
+            + Record Lock：对索引项加锁，锁定符合条件的行。其他不能修改和删除加锁项。
+            + Gap Lock：对索引项之间的“间隙”加锁，锁定记录的范围（对第一条记录前的间隙或最后一条将记录后的间隙加锁），不包含索引项本身。其他事务不能在锁范围内插入数据，这样就防止了别的事务新增幻影行。
+            + Next-key Lock：锁定索引项本身和索引范围。即Record Lock和Gap Lock结合。可解决幻读问题。
+
+        + 参考：https://blog.csdn.net/qq_34337272/article/details/80611486,
+    + 锁分类
+        + 表级锁和行级锁可以进一步划分为共享锁(s)和排它锁(x)
+            + 共享锁(s)
+                + 共享锁（Share Locks, ）
+2. SQL Server
+3. MongoDB
+4. 数据库的优化方案
 
 # 并发
 
@@ -257,38 +273,94 @@
         + ReentrantLock
     + 共享式
         + Semaphore、CountDownLatch
-    
+
     混合的例如：ReentrantReadWriteLock
 
 17. ReadWriteLock是什么?
     + ReadWriteLock是一个读写锁接口，ReentrantReadWriteLock是ReadWriteLock接口的一个具体实现，实现了读写的分离，读锁是共享的，写锁是独占的，读和读之间不会互斥，读和写、写和读、写和写之间才会互斥，提升了读写的性能。
-    
+
 18. FutureTask是什么？
-    + 
+    + 一个异步运算的任务。改类内可以传入一个Callable的具体实现类，可以对这个异步运算的任务的结果进行等待获取、判断是否已经完成、取消任务等操作。由于FutureTask也是Runnable接口的实现类，所以FutureTask也可以放入线程池内。
+
+19. synchronized和ReetrantLock的区别
+    + 首先synchronized是java关键字，ReentrantLock是一个类，二者的本质区别。既然ReentrantLock既然是一个类那么他相比synchronized就具有更多的灵活性，可以被继承，可以有方法有更多的属性。
+    + ReentrantLock体现扩展性最好的方面如下：
+        + 可以设置获取锁的等待时间，有效避免死锁问题
+        + 可以获取锁的信息
+        + 可以灵活的实现多路通知
+    + ReentrantLock底层调用的是Unsafe的park()方法加锁
+    + synchronized 同步语句块的实现使用的是 monitorenter 和 monitorexit 指令，其中 monitorenter 指令指向同步代码块的开始位置，monitorexit 指令则指明同步代码块的结束位置。   
+      synchronized 修饰的方法并没有 monitorenter 指令和 monitorexit 指令，取得代之的确实是 ACC_SYNCHRONIZED 标识，该标识指明了该方法是一个同步方法。  
+      不过两者的本质都是对对象监视器 monitor 的获取。
+
+20. 乐观锁和悲观锁
+    + 乐观锁：不进行加锁操作，乐观认为修改内存变量的时候没有人跟你有竞争的情况，通过比较-替换的操作来保证原子操作，如果替换失败就表明有对应的冲突操作，这样就有相应的重试逻辑。
+    + 悲观锁：认为每次操作的时候都会有竞争的情况，所以在进行操作的时候必须先进行加锁操作。
+
+21. 线程调度策略：线程调度器优先选择优先级最高的线程运行，但是如下几种情况发生以后，线程就会终止运行：
+    + 线程体中调用了yield方法让出了对cpu的占用权利
+    + 线程体中调用了sleep方法使线程进入睡眠状态
+    + 线程由于IO操作受到阻塞
+    + 另外一个更高优先级的线程出现
+    + 在支持时间片的系统中，该线程的时间片用完
+
+22. ConcurrentHashMap的并发度是什么？
+    + ConcurrentHashMap的并发度就是segment的大小，默认为16，这意味着最多同时可以有16条线程操作ConcurrentHashMap，这也是ConcurrentHashMap对Hashtable的最大优势
+
+23. 怎么唤醒一个阻塞的线程？
+    + 如果线程是因为调用了wait(),sleep()或者join()方法而导致阻塞，可以中断线程，并且通过抛出InteruptException来唤醒它；如果线程遇到了IO阻塞，无能为力，因为IO是操作系统实现的，Java代码并没有办法直接接触到操作系统。
+
+24. 如果你提交任务时，线程池队列已满，这时会发生什么？
+    + 如果使用的是无界队列LinkedBlockingQueue,继续添加任务到阻塞队列中等待执行，因为此无界队列可以近乎认为是一个无穷大的值，可以无限存放任务？？？？
+    + 如果使用的是游街队列ArrayBlockingQueue，任务首先会被添加到ArrayBlockingQueue中，ArrayBlockingQueue满了，会根据maxmumPoolSize的值增加线程数量，如果增加了线程数量还是处理不过来，ArrayBlockingQueue继续满，那么则会使用拒绝策略RejectedExecutionHandler处理满了的任务，默认是AbortPolicy。
+
+25. Semaphore有什么作用
+    + Semaphore就是一个信号量，它的作用是限制某段代码块的并发数。
+
+26. Java线程数过多会造成什么异常？
+    1. 线程的生命周期的开销非常高
+    2. 消耗过的CPU资源
+    3. 降低稳定性
+
+27. 高并发常见指标：响应时间(Response Time)、吞吐量(Throughput)、每秒查询率QPS(Query per second)、并发用户数
+
+28. 响应时间：系统对请求做出相应时间
+
+参考：  
+https://blog.csdn.net/tanmomo/article/details/99671622
+https://blog.csdn.net/w372426096/article/details/89914454
 
 # 分布式
 
 1. CAP
-    1. 简单描述cap
+    + 简单描述cap
         + Consistency: Every read receives the most recent write or an error  
           一致性：所有节点访问同一份最新的数据副本
         + Availability: Every request receives a (non-error) response, without the guarantee that it contains the most recent write  
           可用性：非故障的节点在合理的时间内返回合理的响应（不是错误或者超时的响应）。
         + Partition tolerance: The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes  
           分区容错性：分布式系统出现网络分区的时候，仍然能够对外提供服务。
-    2. 什么是网络分区？
+    + 什么是网络分区？
         + 分布式系统中，多个节点之前的网络本来是连通的，但是因为某些故障（比如部分节点网络出了问题）某些节点之间不连通了，整个网络就分成了几块区域，这就叫网络分区。
-    3. 不是所谓的三选二？
+    + 不是所谓的三选二？
         + 当发生网络分区的时候，如果我们要继续服务，那么强一致性和可用性只能 2 选 1。也就是说当网络分区之后 P 是前提，决定了 P 之后才有 C 和 A 的选择。也就是说分区容错性（Partition tolerance）我们是必须要实现的。简而言之就是：CAP 理论中分区容错性 P 是一定要满足的，在此基础上，只能满足可用性 A 或者一致性 C。 因此，分布式系统理论上不可能选择 CA 架构，只能选择 CP 或者 AP 架构。
-    4. 分布式事务BASE理论？
+    + 分布式事务BASE理论？
         + BASE理论是对CAP的延伸和补充，是对CAP中的AP方案的一个补充，即使在选择AP方案的情况下，如何更好的最终达到C。BASE是基本可用，柔性状态，最终一致性三个短语的缩写，核心的思想是即使无法做到强一致性，但应用可以采用适合的方式达到最终一致性。
-    5. 参考：  
-       https://juejin.cn/post/6844903936718012430
+    + 参考：  
+      https://juejin.cn/post/6844903936718012430
 2. 分布式锁，是选择AP还是选择CP ？   
    这里实现分布式锁的方式选取了三种：
     + 基于数据库实现分布式锁
     + 基于redis实现分布式锁
     + 基于zookeeper实现分布式锁
+
+3. zookeeper和Eureka的区别？
+    + zookeeper选择CP
+        + zookeep保证CP，即任何时刻对zookeeper的访问请求能得到一致性的数据结果，同时系统对网络分割具备容错性，但是它不能保证每次服务的可用性。从实际情况来分析，在使用zookeeper获取服务列表时，如果zk正在选举或者zk集群中半数以上的机器不可用，那么将无法获取数据。所以说，zk不能保证服务可用性。
+    + eureka选择AP
+        + eureka保证AP，eureka在设计时优先保证可用性，每一个节点都是平等的，一部分节点挂掉不会影响到正常节点的工作，不会出现类似zk的选举leader的过程，客户端发现向某个节点注册或连接失败，会自动切换到其他的节点，只要有一台eureka存在，就可以保证整个服务处在可用状态，只不过有可能这个服务上的信息并不是最新的信息。
+
+4.
 
 # 系统设计
 
@@ -407,12 +479,11 @@
 1. 数据库中导致索引失效都有哪些情况？
 
 2. 为什么不推荐使用外键
-
-+ 优点：数据强一致性;ER图可靠易读。
-+ 缺点：级联问题;增加数据库压力;死锁问题:高并发场景下很容易造成死锁;开发不方便
-+ 总结：
-    + 如果是单机并且并发不高的情况，不需要性能调优，或者不能使用程序保证数据的一致性和完整性，可以使用外键
-    + 如果为了高并发，分布式，使系统性更优，更好维护，不要使用外键
+    + 优点：数据强一致性;ER图可靠易读。
+    + 缺点：级联问题;增加数据库压力;死锁问题:高并发场景下很容易造成死锁;开发不方便
+    + 总结：
+        + 如果是单机并且并发不高的情况，不需要性能调优，或者不能使用程序保证数据的一致性和完整性，可以使用外键
+        + 如果为了高并发，分布式，使系统性更优，更好维护，不要使用外键
 
 # 设计模式
 
@@ -421,10 +492,28 @@
     + 工厂方法模式：spring实例工厂的实现
     + 代理模式：最简单的应用就是代理类将所有其他模块业务方法的调用进行封装
 
+# 中间件
+
+1. redis
+    + redis 基本数据类型  
+      Redis支持五种数据类型：string（字符串），hash（哈希），list（列表），set（集合）及zset(sorted set：有序集合)。
+    + redis是单线程还是多线程  
+      redis4.0已经有了多线程的概念，但是默认是关闭的。并且redis多线程跟membercache是不同的，redis作者也强调，redis的单线程的处理能力很强，没有必要使用多线程。之所以加入了多线程是为了用来处理删除等速度较慢的指令。 redis之所以速度很快是因为底层使用的是IO多路复用，也就是reactor模型。这种模型跟java nio，linux epoll/poll的IO思路是一样的。select+轮循。同一个线程可以响应多个IO事件，异步非阻塞。多路指的是多个网络请求，复用指的就是同一个线程。 而且redis是内存式的，并且数据结构简单，也是它速度快的原因。
+    + redis 集群方式有哪几种？
+2. kafka
+    + Kafka可不可以动态添加topic副本？
+
+    + Kafka集群模式
+
+    + Kafka经常应用的场景有哪些？
+
+    + 给你几台服务器怎么高效设置Kafka
+
 # 问题排查
 
-1.线上问题都有哪些手段？
+1. 线上问题都有哪些手段？
+    + 日志跟踪
 
-+ 日志跟踪
-+ arthas ali提供的java线上应用诊断利器 参考：https://arthas.aliyun.com/zh-cn/
-   
+    + arthas ali提供的java线上应用诊断利器   
+      参考：https://arthas.aliyun.com/zh-cn/
+       
