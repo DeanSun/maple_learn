@@ -604,6 +604,39 @@ https://blog.csdn.net/w372426096/article/details/89914454
     + I/O请求：
         + I/O调用阶段：用户进程向内核发起系统调用
         + I/O执行阶段：内核等待I/O请求处理完成返回
+        + 同步阻塞I/O(Blocking I/O,BIO):应用进程向内核发起I/O请求，发起调用的线程一直等待内核返回结果。一次完整的I/O请求成为BIO，所以BIO想要实现异步操作时，需要使用多线程模型。一个请求对应一个线程，由于线程资源是宝贵的，创建过多的线程会增加线程间切换的开销。
+        + 同步非阻塞I/O(NIO):应用程序向内核发起I/O请求，不会等待内核返回结果，采用轮循的方式请求结果。NIO虽然比BIO性能提升了很多，但是轮循过程中大量的系统调用导致上下文切换开销很大。单独使用非阻塞I/O时效率并不高，而且随着并发量的提升，非阻塞I/O存在严重的性能浪费。
+        + I/O多路复用：一个线程处理多个I/O句柄的操作。多路指的是多个数据通道，复用指的是使用一个或者固定多个线程来处理没有一个Socket。
+        + 信号驱动I/O:半异步的I/O模型，在使用信号驱动I/O模型时，当数据准备就绪以后，内核通过发送一个SIGO信号通知应用程序，应用程序就可以开始读取数据了。
+        + 异步I/O:异步I/O与信号驱动I/O这种半异步模型的主要区别在于：信号驱动由内核确定一次I/O的开始，而异步I/O当内核通知的时候就已经完成的本次的I/O操作了。
+    + 在I/O多路复用的场景下，当数据准备就绪以后，就需要一个事件分发器(Event Dispatcher),它负责将对应的读写事件分发给对应的读写事件处理器(Event Handler)。
+    + 时间分发器有两种设计模式：Reactor和Proactor，Reactor采用同步I/O，Proactor采用异步I/O。
+    + Netty整体架构：
+        + Core核心层：提供了底层网络通信的通用抽象和实现，包括扩展的事件模型、通用的通信API、支持零拷贝的ByteBuf等。
+        + Protocol Support 协议支持层:协议基本上覆盖了主流协议的编解码实现，如HTTP、SSL、Protobuf、压缩、大文件传输、WebSocket、文本、二进制等主流协议，还支持自定义应用层协议。
+        + Transport Service 传输服务层:提供了网络传输能力的定义和实现方法。它支持Socket、HTTP隧道、虚拟机管道等传输方式。Netty对TCP、UDP等数据传输做了抽象和封装，用户可以聚焦业务部分的开发，不用关心底层数据传输的细节。
+    + Netty逻辑架构：网络通信层、事件调度层、服务编排层。
+        + 网络通信层：执行网络的I/O操作。
+            + 核心组件：BootStrap、ServerBootStrap、Channel三个组件。
+                + BootStrap用来连接远端服务器，需要绑定一个EventLoopGroup。
+                + ServerBootStrap用于服务器端绑定本地端口，会绑定两个EventLoopGroup，这两个通常被成为Boss和Worker。
+                    + 每个服务器都会有一个Boss和多个Worker，Boss会不停的接收新的链接，然后将连接分配给一个个Worker处理连接。
+                + Channel：网络通信的载体。
+                    + AbstractChannel是整个Channel家族的的基类。
+                    + NioServerSocketChannel 异步 TCP 服务端。
+                    + NioSocketChannel 异步 TCP 客户端。
+                    + OioServerSocketChannel 同步 TCP 服务端。
+                    + OioSocketChannel 同步 TCP 客户端。
+                    + NioDatagramChannel 异步 UDP 连接。
+                    + OioDatagramChannel 同步 UDP 连接。
+        + 事件调度层：通过Reactor线程模型对各类事件进行聚合处理，通过Selector主循环线程集成多种事件(I/O事件，信号事件，定时事件等)，实际的业务处理逻辑是交由服务编排层中相关的Handler完成。
+            + 核心组件：EventLoopGroup、EventLoop
+                + EventLoopGroup本质是一个线程池，主要负责接收I/O请求，并分配线程执行处理请求。
+        + 服务编排层：负责组装各类服务，netty的核心处理链，用以实现网络事件的动态编排和有序传播。
+            + 核心组件：ChannelPipeline、ChannelHandler、ChannelHanlerContext
+                + ChannelPipeline：是netty核心编排组件，负责组装各种ChannelHandler，实际数据的编解码以及加工处理操作都是由ChannerHandler来完成的。ChannelPipeline相当于是ChannelHandler的实例列表--内部通过双向链表将不同的ChannelHandler链接在一起。当I/O读写事件触发后，ChannelPipeline会一次调用ChannelHandler列表对Channel的数据进行拦截和处理。
+                + ChannelHandler：
+                    
 
 # 计算机网络
 
@@ -1147,4 +1180,17 @@ https://blog.csdn.net/w372426096/article/details/89914454
         + 回弹性，当应用程序部分功能失效的时候，应用系统本身能够进行自我修复，保证正常运行，保证响应， 不会出现系统崩溃和宕机。
         + 弹性，能够对应用负载压力做出响应，能够自动伸缩以适应应用负载压力，根据压力自动调整自身的处理能力，或者根据自身的处理能力，调整进入系统中的访问请求数量。
         + 消息驱动，功能模块之间、服务之间、通过消息进行驱动、完成服务的流程。
+
+# 领域模型设计
+
+1.
+
+# 数学理论知识
+
+1. 数值转换
+    + 换基法
+    + 除余法
+    + 按位拆分法和按位合并法
+    + 数制转换图
+    + 
     
