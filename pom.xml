@@ -78,6 +78,19 @@
             <artifactId>kafka-clients</artifactId>
             <version>${demo.kafka.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+        </dependency>
 
         <!--        <dependency>-->
 <!--            <groupId>org.springframework.security</groupId>-->
