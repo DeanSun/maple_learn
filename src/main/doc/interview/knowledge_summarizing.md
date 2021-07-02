@@ -635,8 +635,68 @@ https://blog.csdn.net/w372426096/article/details/89914454
         + 服务编排层：负责组装各类服务，netty的核心处理链，用以实现网络事件的动态编排和有序传播。
             + 核心组件：ChannelPipeline、ChannelHandler、ChannelHanlerContext
                 + ChannelPipeline：是netty核心编排组件，负责组装各种ChannelHandler，实际数据的编解码以及加工处理操作都是由ChannerHandler来完成的。ChannelPipeline相当于是ChannelHandler的实例列表--内部通过双向链表将不同的ChannelHandler链接在一起。当I/O读写事件触发后，ChannelPipeline会一次调用ChannelHandler列表对Channel的数据进行拦截和处理。
-                + ChannelHandler：
-                    
+                + ChannelHandler：数据的编解码操作以及其他转换工作实际都是通过ChannelHandler处理的
+                  ![avatar](img/Channel_ChannelPipeline_ChannelHandlerContext_ChannelHandler.png)
+                + ChannelHandlerContext: 用于保存ChannelHandler上下文，通过ChannelHandlerContext我们可以知道ChannelPipeline和ChannelHandler之间的关联关系。
+        + 组件关系梳理：
+            + 服务器端启动初始化后有Boss EventLoopGroup和Worker EventLoopGroup两个组件，其中Boss负责监听网络连接时事件。当有新的网络连接事件到达时，则将Channel注册到Worker上。
+            + Worker EventLoopGroup会被分配一个EventLoop负责处理该Channel的读写事件。每个EventLoop都是单线程，通过Selector进行事件循环。
+            + 当客户端发起I/O读写事件时，服务器端EventLoop会进行数据的读取，然后通过Pipeline触发各种监听器进行数据的加工处理。
+            + 客户端数据会被传送到ChannelPipeline的第一个ChannelInboundHandler中，数据处理完后，将加工完成的数据传递到下一个ChannelInboundHandler。
+            + 当数据回写客户端时，会将处理结果在ChannelPipeline的ChannelOutboundHandler中传播，最后到达客户端。
+    + Netty源码结构
+        + Core核心模块
+            + netty-common模块是Netty的核心基础包，提供丰富的工具类，其他模块都需要依赖它。在common模块中，常用的包括通用工具类和自定义并发包。
+            + netty-buffer模块中Netty自己实现了一个更加完备的ByteBuf工具类，用于网络通信中的数据载体。
+            + netty-resover模块主要提供了一些关于基础设置的解析工具，包括IP Address、hostname、DNS等。
+        + Protocol Support协议支持层模块
+            + netty-codec主要负责编解码工作，通过编解码实现原始字节数据与业务实体对象之间的相互转换。此外该模块还提供了抽象的编解码类ByteToMessageDecode和MessageToByteEncode，通过继承这两个抽象类可以轻松的实现自定义编解码逻辑。
+            + netty-handler模块主要负责数据处理工作。
+        + Transport Service 传输服务层模块
+            + netty-transport模块可以说是Netty提供数据处理和传输的核心模块。
+    + 启动类：
+        + 服务器端启动类：ServerBootStrap
+            + 设置Channel属性：有option和childOption两个方法。option主要负责设置Boss线程组，childOption对应的是Worker线程组。
+                + ChannelOption常见参数：
+                    + SO_KEEPALIVE: 设置为true代表使用了TCP SO_KEEPALIVE属性，TCP会主动探测连接状态，即连接保活。
+                    + SO_BACKLOG: 已经完成三次握手的请求队列最大长度，同一时刻服务端可能会处理多个连接，在高并发海量连接的场景下，该参数应当合理调大。
+                    + TCP_NODELAY: Netty默认是true，表示立即发送数据。如果设置为false表示使用Nagle算法，该算法将TCP数据包累积到一定量才会发送，虽然可以减少报文发送的数量，但是会造成一定的数据延迟。Netty为了最小化数据传输的延迟，默认禁用了Nagle算法。
+                    + SO_SNDBUF: TCP发送数据缓冲区大小
+                    + SO_RCVBUF: TCP接收数据缓冲区大小
+                    + SO_LINGER: 设置延迟关闭的时间，等待缓冲区中的数据发送完成。
+                    + CONNECT_TIMEOUT_MILLIS: 建立连接的超时时间。
+    + Reactor线程模型
+        + 单线程模型：所有I/O操作(包括建立连接、数据读取、事件分发等), 都是由一个线程完成的。
+            + 缺陷： 一个线程支持处理的连接数非常有限，CPU很容易打满，性能方面有明显瓶颈；当多个事件同时触发，只能同步处理，一个事件执行完毕再执行下一个，容易造成消息积压及请求超时；如果节点处于满载状态，可能会造成该节点不可用。
+        + 多线程模型：因单线程模型的瓶颈应运而生了，将多个业务逻辑交给多线程来进行处理。
+        + 主从多线程模型：由多个Reactor线程组成，每个Reactor对象都有独立的Selector对象，mainReactor主要负责客户端连接的accept事件，连接建立成功后将新创建的连接对象注册至subReactor。再由subReactor负责分配线程池中I/O线程与其连接绑定，它将负责连接生命周期内所有的I/O事件。
+        + Netty推荐使用主从多线程模型，轻松达到万级规模的客户端连接。在海量客户端并发请求的场景下，主从多线程模型还可以适当增加subReactor线程的数量，从而利用多核能力提升系统的吞吐量。
+    + Reactor线程模型运行的四个步骤：连接注册、事件轮循、事件分发、任务处理。
+        + 连接注册：Channel建立后，注册至Reactor线程中的Selector选择器。
+        + 事件轮循：轮循Selector选择器中已注册的Channel的I/O事件
+        + 事件分发：为准备就绪的I/O事件分配相应的处理线程。
+        + 任务处理：Reactor线程还负责任务队列的非I/O任务，每个Worker线程从各自维护的任务队列中取出任务异步执行。
+    + Netty的EventLoop实现原理
+        + EventLoop：事件等待和处理的程序模型，可以解决多线程资源消耗高的问题。
+        + 事件执行的方式：立即执行、延后执行、定时执行。
+        + 任务处理机制：NioEventLoop不仅负责处理I/O事件，还要兼顾执行任务队列中的任务。任务队列遵循FIFO的规则，可以保证任务执行的公平性。
+            + NioEventLoop执行的任务基本上可以分为三类：
+                + 普通任务： 通过NioEventLoop的execute()方法向任务队列taskQueue中添加任务。
+                + 定时任务： 通过NioEventLoop的schedule()方法向定时任务队列scheduleTaskQueue添加一个定时任务，用于周期性执行该任务。
+                + 尾部队列： tailTasks相对于普通任务优先级比较低，在每次执行完taskQueue中的任务以后才会去尾部队列里获取任务执行。
+    + 服务编排层：
+        + ChannelPipeline是的实现原理
+            + ChannelPipeline内部结构：
+                + ChannelPipeline可以看作是ChannelHandler的容器载体
+    + Netty常用的解码器：
+        + 固定长度解码器 FixedLengthFrameDecoder
+        + 特殊分隔符解码器 DelimiterBasedFrameDecoder
+            + delimiters: 指定特殊分隔符，通过写入ByteBuf作为参数传入。delimiters的类型是ByteBuf数组，所以我们可以传入多个分隔符，但是最终会使用最短的分隔符进行消息的拆分
+            + maxLength：报文的最大长度限制。如果超过maxLength还没有检测到分隔符，将会抛出TooLongFrameException。
+            + failFast：需要跟maxLength一起搭配使用，通过设置failFast来控制抛出TooLongFrameException错误的时机。如果为true，只要检测到立即抛出错误；如果为false,待接收到一个完整的消息后再抛出错误。
+            + stripDelimiter:判断解码后的消息是否需要去除掉分隔符。
+        + 长度域解码器 LengthFieldBasedFrameDecoder: 是解决TCP粘包/拆包最常用的解码器。
+            + 
 
 # 计算机网络
 
