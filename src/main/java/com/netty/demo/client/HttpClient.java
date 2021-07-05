@@ -10,7 +10,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
-import org.apache.tomcat.util.http.fileupload.UploadContext;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -54,6 +53,6 @@ public class HttpClient {
 
     public static void main(String[] args) throws URISyntaxException, InterruptedException {
         HttpClient client = new HttpClient();
-        client.connect("127.0.0.1",8088);
+        client.connect("127.0.0.1", 8088);
     }
 }
