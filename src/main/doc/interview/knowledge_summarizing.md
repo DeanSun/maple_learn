@@ -213,16 +213,17 @@
    </tbody>
    </table>
 
-3. 并发编程三要素？
+3. 并发编程三要素
     + 原子性：原子性指的就是一个或者多个操作，要么全部执行并且在执行过程中不被其他操作打断，要么就全部都不执行
     + 可见性：可见性是多个线程同时操作一个共享变量时，其中一个线程对共享变量进行修改后，其他线程能够立即看到修改后的结果
     + 有序性：程序的执行顺序按照代码的先后顺序执行
 
-4. 创建线程的方式有哪些?
+4. 创建线程的方式：
     + 集成Thread类创建线程类
     + 通过Runnable接口创建线程类
     + 通过Callable和Future创建线程
     + 通过线程池创建
+
 5. Java线程具有五种基本状态
     + ![线程的状态变换](img/Thread_Status.png)
     + 新建状态(New): 当线程对象创建后，立即进入新建状态
@@ -235,14 +236,31 @@
             3. 其他阻塞 通过调用线程的sleep()或join()或发出了I/O请求时，线程会进入到阻塞状态。当sleep()状态超时，join()等待线程终止或者超时，或者I/O处理完毕时，线程重新转入就绪状态。
     + 死亡状态(Dead): 线程执行完了或者因异常退出了run()方法，该线程结束生命周期。
 
-6. 什么是线程池?
+6. 线程池
     + 线程池就是提前创建若干线程，如果有任务需要处理，线程池里的线程就会处理任务，处理完之后线程并不会被销毁，而是等待下一个任务。由于创建和销毁都是非常消耗系统资源的，所以当你想要频繁创建和销毁线程的时候就可以使用线程池来提升性能。
-
-7. 四种线程池的创建：
-    + newCachedThreadPool：创建一个可缓存线程池
-    + newFixedThreadPool: 创建一个定长线程池，可控制线程最大并发数
-    + newScheduledThreadPool: 创建一个定长线程池，支持定时及周期性任务执行
-    + newSingleThreadExecutor: 创建一个单线程化的线程池，只有一个线程来执行任务。
+    + Java的Executors工具提供了5中创建的方法：
+        + ![Excecotrs](img/Java_Executors.png)
+    + 四种线程池的创建：
+        + newCachedThreadPool：创建一个可缓存线程池
+        + newFixedThreadPool: 创建一个定长线程池，可控制线程最大并发数
+        + newScheduledThreadPool: 创建一个定长线程池，支持定时及周期性任务执行
+        + newSingleThreadExecutor: 创建一个单线程化的线程池，只有一个线程来执行任务。
+    + ThreadPoolExecutor
+        + 常见参数：
+            + ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler)
+                + 第一个参数设置核心线程数。
+                + 第二个参数设置最大线程数。
+                + 第三个和第四个用来设置线程空闲时间和空闲时间的单位，当线程空闲超时就会被销毁。可以通过allowCoreThreadTimeOut方法来允许核心线程被回收。
+                + 第五个参数设置缓冲队列。三种常用的缓冲队列：
+                    + ArrayBlockingQueue是一个有界队列，就是指队列有最大容量限制。
+                    + LinkedBlockingQueue是无界队列，队列不限制容量。
+                    + 还有一个是SynchronousQueue，是一个同步队列，内部没有缓冲区。
+                + 第六个参数设置线程池工厂方法，线程工厂用来创建新线程，可以对线程的一些属性进行定制。一般使用默认工厂即可。
+                + 第七个参数设置线程满时的拒绝策略。有四种拒绝策略：
+                    + Abort在线程池满后，提交新任务时会抛出RejectedExecutionException，这个也是默认的拒绝策略。
+                    + Discard策略在提交任务失败时对任务直接丢弃。
+                    + CallerRuns会在提交失败时，有提交任务的线程直接执行提交的任务。
+                    + DiscardOldest策略会丢弃最早提交的任务。
 
 8. 常用的并发工具类有哪些?
     + CountDownLatch、CyclicBarrier、Semephore、Exchanger
@@ -259,39 +277,42 @@
 11. volatile关键字的作用?
     + 使用该关键字以后可以让多线程环境中，线程间可以共享变量信息，实现可见性；使用改关键字可以禁止指令重排序优化。
 
-12. 什么是CAS？
-    + CAS就是 Compare And Swap 的缩写，意思就是比较交换。 CAS是一种乐观锁。CAS包括三个操作数，内存位置、预期原值和新值。
+12. CAS
+    + CAS就是 Compare And Swap 的缩写，意思就是比较交换。 CAS是一种乐观锁，一种轻量级锁。CAS包括三个操作数，内存位置、预期原值和新值。
+    + JUC工具包中有很多工具类都是基于CAS来实现的。
+    + 问题：
+        + CAS容易造成ABA问题： 一个线程将数值改成了b，然后又改回a，此时CAS是认为没有变化，其实是已经变化了，这个问题最好的解决办法就是版本号。每操作一次版本号+1.
+        + 循环时间长开销大：自旋CAS如果长时间不成功，会给CPU带来非常大的执行开销
+        + 只能保证一个共享变量的原子操作：当一个共享变量执行操作时，可以使用自旋CAS的方式保证其原子性。但是多个共享变量操作时，这时候就需要加锁了。
 
-13. CAS的问题：
-    + CAS容易造成ABA问题： 一个线程将数值改成了b，然后又改回a，此时CAS是认为没有变化，其实是已经变化了，这个问题最好的解决办法就是版本号。每操作一次版本号+1.
-    + 循环时间长开销大：自旋CAS如果长时间不成功，会给CPU带来非常大的执行开销
-    + 只能保证一个共享变量的原子操作：当一个共享变量执行操作时，可以使用自旋CAS的方式保证其原子性。但是多个共享变量操作时，这时候就需要加锁了。
 
-14. 什么是Future?
+13. Future?
     + 在实例化线程的时候，不论我们继承Thread还是实现Runnable接口，我们都得不到执行后的结果。但是通过实现Callback接口，并用Future可以来接收多线程的执行结果。Future表示一个可能还没有完成的异步任务的结果，针对这个结果可以添加Callback以便在任务成功或失败做出相应的操作。
 
-15. 什么是AQS？
+14. AQS？
     + 它是Java底层一个同步工具类，用一个int类型的变量表示同步状态了，并提供了一系列CAS操作来管理这个同步状态。
     + AQS是一个用来构建锁和同步器的框架，使用AQS可以简单高效地构造出应用广泛的大量的同步器。例如：ReentrantLock，Semphore、ReentrantReadWriteLock、SynchronousQueue、FutureTask。
+    + 两种同步方式：
+        + 独占式
+            + ReentrantLock
+        + 共享式
+            + Semaphore、CountDownLatch
 
-16. AQS的两种同步方式?
-    + 独占式
-        + ReentrantLock
-    + 共享式
-        + Semaphore、CountDownLatch
+    + 混合的例如：ReentrantReadWriteLock + ReadWriteLock是一个读写锁接口，ReentrantReadWriteLock是ReadWriteLock接口的一个具体实现，实现了读写的分离，读锁是共享的，写锁是独占的，读和读之间不会互斥，读和写、写和读、写和写之间才会互斥，提升了读写的性能。
 
-    混合的例如：ReentrantReadWriteLock
-
-17. ReadWriteLock是什么?
-    + ReadWriteLock是一个读写锁接口，ReentrantReadWriteLock是ReadWriteLock接口的一个具体实现，实现了读写的分离，读锁是共享的，写锁是独占的，读和读之间不会互斥，读和写、写和读、写和写之间才会互斥，提升了读写的性能。
-
-18. FutureTask是什么？
+15. FutureTask
     + 一个异步运算的任务。改类内可以传入一个Callable的具体实现类，可以对这个异步运算的任务的结果进行等待获取、判断是否已经完成、取消任务等操作。由于FutureTask也是Runnable接口的实现类，所以FutureTask也可以放入线程池内。
 
-19. 死锁：
-    + 
+16. 死锁：
+    +
 
-20. synchronized和ReetrantLock的区别
+17. Synchronized
+    + Synchronized对对象加锁，在JVM中，对象在内存中分为三个区域：对象头、实例数据和对齐填充。
+    + 应用在方法上的时候，在字节码中是通过方法的ACC_SYNCHRONIZED标志来实现的。
+    + 应用在同步块上的时候，在字节码中是通过monitorenter和monitorexit实现的。
+    + 针对Synchronized获取锁的方式，JVM使用了锁升级的优化方式，就是优先使用偏向锁优先同一线程然后再次获取锁，如果失败，就升级为CAS轻量级锁，如果失败就会短暂自旋，防止线程被系统挂起。最后如果都失败升级为重量级锁。
+
+17. synchronized和ReetrantLock的区别
     + 首先synchronized是java关键字，ReentrantLock是一个类，二者的本质区别。既然ReentrantLock既然是一个类那么他相比synchronized就具有更多的灵活性，可以被继承，可以有方法有更多的属性。
     + ReentrantLock体现扩展性最好的方面如下：
         + 可以设置获取锁的等待时间，有效避免死锁问题
@@ -302,41 +323,41 @@
       synchronized 修饰的方法并没有 monitorenter 指令和 monitorexit 指令，取得代之的确实是 ACC_SYNCHRONIZED 标识，该标识指明了该方法是一个同步方法。  
       不过两者的本质都是对对象监视器 monitor 的获取。
 
-21. 乐观锁和悲观锁
+18. 乐观锁和悲观锁
     + 乐观锁：不进行加锁操作，乐观认为修改内存变量的时候没有人跟你有竞争的情况，通过比较-替换的操作来保证原子操作，如果替换失败就表明有对应的冲突操作，这样就有相应的重试逻辑。
     + 悲观锁：认为每次操作的时候都会有竞争的情况，所以在进行操作的时候必须先进行加锁操作。
 
-22. 线程调度策略：线程调度器优先选择优先级最高的线程运行，但是如下几种情况发生以后，线程就会终止运行：
+19. 线程调度策略：线程调度器优先选择优先级最高的线程运行，但是如下几种情况发生以后，线程就会终止运行：
     + 线程体中调用了yield方法让出了对cpu的占用权利
     + 线程体中调用了sleep方法使线程进入睡眠状态
     + 线程由于IO操作受到阻塞
     + 另外一个更高优先级的线程出现
     + 在支持时间片的系统中，该线程的时间片用完
 
-23. ConcurrentHashMap
+20. ConcurrentHashMap
     + ConcurrentHashMap的并发度就是segment的大小，默认为16，这意味着最多同时可以有16条线程操作ConcurrentHashMap，这也是ConcurrentHashMap对Hashtable的最大优势
     + 线程安全
     + 采用分段锁的思路来解决低并发场景下的锁并发频率
     + 1.7中使用Segment进行分段加锁，降低并发锁定;1.8中使用CAS自旋锁的乐观锁来提高性能，但是并发度高的时候性能一般。
 
-24. 怎么唤醒一个阻塞的线程？
+21. 怎么唤醒一个阻塞的线程？
     + 如果线程是因为调用了wait(),sleep()或者join()方法而导致阻塞，可以中断线程，并且通过抛出InteruptException来唤醒它；如果线程遇到了IO阻塞，无能为力，因为IO是操作系统实现的，Java代码并没有办法直接接触到操作系统。
 
-25. 如果你提交任务时，线程池队列已满，这时会发生什么？
+22. 如果你提交任务时，线程池队列已满，这时会发生什么？
     + 如果使用的是无界队列LinkedBlockingQueue,继续添加任务到阻塞队列中等待执行，因为此无界队列可以近乎认为是一个无穷大的值，可以无限存放任务？？？？
     + 如果使用的是游街队列ArrayBlockingQueue，任务首先会被添加到ArrayBlockingQueue中，ArrayBlockingQueue满了，会根据maxmumPoolSize的值增加线程数量，如果增加了线程数量还是处理不过来，ArrayBlockingQueue继续满，那么则会使用拒绝策略RejectedExecutionHandler处理满了的任务，默认是AbortPolicy。
 
-26. Semaphore有什么作用
+23. Semaphore有什么作用
     + Semaphore就是一个信号量，它的作用是限制某段代码块的并发数。
 
-27. Java线程数过多会造成什么异常？
+24. Java线程数过多会造成什么异常？
     1. 线程的生命周期的开销非常高
     2. 消耗过的CPU资源
     3. 降低稳定性
 
-28. 高并发常见指标：响应时间(Response Time)、吞吐量(Throughput)、每秒查询率QPS(Query per second)、并发用户数
+25. 高并发常见指标：响应时间(Response Time)、吞吐量(Throughput)、每秒查询率QPS(Query per second)、并发用户数
 
-29. 响应时间：系统对请求做出相应时间
+26. 响应时间：系统对请求做出相应时间
 
 参考：  
 https://blog.csdn.net/tanmomo/article/details/99671622
