@@ -359,7 +359,32 @@
 
 26. 响应时间：系统对请求做出相应时间
 
-参考：  
+27. JUC工具类：
+    + 基本数据类型的原子类：AtomicBoolean、AtomicLong、AtomicInteger
+        + ActomicLong基于unsafe类实现，基于CAS。
+        + unsafe类是底层工具类，JUC中很多工具类都是通过该类实现的，该类提供了类似C的指针操作，提供CAS功能，该类中所有的方法都是native方法。
+        + LongAdder、DoubleAdder、LongAccumulator、DoubleAccumulator这四个类是从1.8开始提供的。
+            + LongAdder基于Cell实现，使用分段锁的思路，是一种空间换时间的策略，更适合高并发场景。
+            + LongAccumulator比LongAdder更强大的功能，能够指定对数据的操作规则。
+    + 对对象的原子读写功能，AtomicStampedReference和AtomicMarkableReference用于解决ABA问题，分别基于时间戳和标记位来解决的。
+    + 锁相关的类：
+        + Reentrant重入锁
+        + ReentrantLock独占锁
+        + Semaphore是共享锁，允许多个线程共用资源，适用于限制使用共享资源线程数量的场景。
+        + StampedLock,1.8改进的读写锁，是一种CLH的乐观锁，能够有效防止读写饥饿。
+            + 读写饥饿：就是线程读操作很平凡，导致写线程很难获取到资源，导致写线程很难加写锁。
+    + 异步执行的类：
+        + 1.8提供的CompletableFuture，可以支持流式调用，可以方便的进行多Future的组合使用。
+        + 1.7提供的ForkJoinPool，采用分治思路，将大任务分解成多个小任务处理，然后在合并处理结果。ForkJoinPool的特点是使用工作窃取算法，可以有效平衡多任务时间长短不一的场景。
+    + 常用的阻塞队列：
+        + LinkedBlockingDeque: 双端队列，可以从队头和队尾操作入队和出队操作。
+        + ArrayBlockingQueue：单端队列，只能从队尾出队，对头入队进行操作。
+    + 控制多线程协作时使用的类：
+        + CountDownLatch：实现计数器功能，可以用来控制等待多个线程执行任务后进行汇总。
+        + CyclicBarrier可以让一组线程等待至某个状态以后，再全部同时执行，一般在测试时使用，可以让多线程更好的并发执行。
+        + Samaphore用来控制对共享资源的并发访问度。
+    
+参考：     
 https://blog.csdn.net/tanmomo/article/details/99671622
 https://blog.csdn.net/w372426096/article/details/89914454
 
